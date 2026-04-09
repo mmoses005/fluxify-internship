@@ -1,223 +1,277 @@
 import React, { useState } from 'react';
-import './App.css';
+import './app.css';
 
-// --------------------------------------------------------------
-// TASK 1: Counter, ToggleCard, ColorPicker components
-// --------------------------------------------------------------
-
-// 1. Counter component
-const Counter = () => {
-  const [count, setCount] = useState(0);
-  
-  const increment = () => setCount(prev => prev + 1);
-  const decrement = () => setCount(prev => (prev > 0 ? prev - 1 : 0));
-  
-  return (
-    <div className="counter-card">
-      <h3 className="counter-title">
-        <span className="counter-icon">🔢</span> Interactive Counter
-      </h3>
-      <div className="counter-buttons">
-        <button onClick={decrement} className="btn-decrement" aria-label="Decrement">−</button>
-        <span className="counter-value">{count}</span>
-        <button onClick={increment} className="btn-increment" aria-label="Increment">+</button>
-      </div>
-      <p className="counter-note">Count never goes below 0</p>
-    </div>
-  );
+// Helper: Validate email format
+const isValidEmail = (email) => {
+  return /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/.test(email);
 };
 
-// 2. ToggleCard component
-const ToggleCard = () => {
-  const [isVisible, setIsVisible] = useState(true);
-  const toggleVisibility = () => setIsVisible(prev => !prev);
+// ----- TASK 1: Registration Form Component -----
+const RegistrationForm = () => {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    role: 'student'
+  });
   
-  return (
-    <div className="toggle-card">
-      <div className="toggle-header">
-        <h3 className="toggle-title">
-          <span className="toggle-icon">🎴</span> Toggle Card
-        </h3>
-        <button onClick={toggleVisibility} className="toggle-btn">
-          {isVisible ? 'Hide Content' : 'Show Content'}
-        </button>
-      </div>
-      {isVisible && (
-        <div className="toggle-content">
-          <p>✨ This is the hidden content! You can click the button above to toggle me on/off.</p>
-          <div className="toggle-footer">🎉 Interactive UI demo</div>
-        </div>
-      )}
-      {!isVisible && (
-        <div className="toggle-hidden-message">Content is hidden. Click "Show Content" to reveal.</div>
-      )}
-    </div>
-  );
-};
+  const [errors, setErrors] = useState({});
+  const [successMsg, setSuccessMsg] = useState('');
+  const [submitted, setSubmitted] = useState(false);
 
-// 3. ColorPicker component
-const ColorPicker = () => {
-  const [bgColor, setBgColor] = useState("#3b82f6");
-  
-  const colorOptions = [
-    { name: "Red", value: "#ef4444" },
-    { name: "Green", value: "#10b981" },
-    { name: "Blue", value: "#3b82f6" },
-    { name: "Purple", value: "#8b5cf6" }
-  ];
-  
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+    if (successMsg) setSuccessMsg('');
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    const { fullName, email, password, confirmPassword, role } = formData;
+
+    if (!fullName.trim()) newErrors.fullName = 'Full name is required';
+    if (!email.trim()) newErrors.email = 'Email address is required';
+    else if (!isValidEmail(email)) newErrors.email = 'Enter a valid email (e.g., name@domain.com)';
+    
+    if (!password) newErrors.password = 'Password is required';
+    else if (password.length < 8) newErrors.password = 'Password must be at least 8 characters';
+    
+    if (!confirmPassword) newErrors.confirmPassword = 'Please confirm your password';
+    else if (password !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+    
+    return newErrors;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setSubmitted(true);
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      setSuccessMsg('');
+      return;
+    }
+    // Success: clear form, show green message
+    setFormData({
+      fullName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      role: 'student'
+    });
+    setErrors({});
+    setSuccessMsg('Account created successfully!');
+    setSubmitted(false);
+  };
+
+  const renderError = (fieldName) => {
+    if (errors[fieldName]) {
+      return <p className={`error-message ${errors[fieldName] ? 'visible' : ''}`}>{errors[fieldName]}</p>;
+    }
+    return null;
+  };
+
   return (
-    <div className="colorpicker-card">
-      <h3 className="colorpicker-title">
-        <span className="colorpicker-icon">🎨</span> Color Picker
-      </h3>
-      <div className="color-buttons">
-        {colorOptions.map((color) => (
-          <button
-            key={color.name}
-            onClick={() => setBgColor(color.value)}
-            className="color-btn"
-            style={{ backgroundColor: color.value }}
-          >
-            {color.name}
+    <div className="registration-container">
+      <div className="form-card">
+        <h2 className="form-title">📝 Register</h2>
+        {successMsg && <div className="success-alert">{successMsg}</div>}
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="form-group">
+            <label className="form-label">Full Name *</label>
+            <input
+              type="text"
+              name="fullName"
+              value={formData.fullName}
+              onChange={handleChange}
+              className={`form-input ${errors.fullName ? 'input-error' : ''}`}
+              placeholder="John Doe"
+            />
+            {renderError('fullName')}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Email *</label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className={`form-input ${errors.email ? 'input-error' : ''}`}
+              placeholder="you@example.com"
+            />
+            {renderError('email')}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Password * (min. 8 chars)</label>
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className={`form-input ${errors.password ? 'input-error' : ''}`}
+              placeholder="••••••••"
+            />
+            {renderError('password')}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Confirm Password *</label>
+            <input
+              type="password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              className={`form-input ${errors.confirmPassword ? 'input-error' : ''}`}
+              placeholder="confirm password"
+            />
+            {renderError('confirmPassword')}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Role *</label>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              className="form-select"
+            >
+              <option value="student">Student</option>
+              <option value="teacher">Teacher</option>
+              <option value="admin">Admin</option>
+              <option value="guest">Guest</option>
+            </select>
+            {renderError('role')}
+          </div>
+
+          <button type="submit" className="submit-button">
+            Create Account
           </button>
-        ))}
+        </form>
+        <p className="form-hint">All fields required • passwords must match & ≥8 chars</p>
       </div>
-      <div className="color-preview" style={{ backgroundColor: bgColor }}>
-        <span>Preview Box</span>
-      </div>
-      <p className="color-current">Current color: <span className="color-code">{bgColor}</span></p>
     </div>
   );
 };
 
-// --------------------------------------------------------------
-// TASK 2: Product Components
-// --------------------------------------------------------------
+// ----- TASK 2: Dynamic Profile Builder (Live Preview) -----
+const ProfileBuilder = () => {
+  const [profile, setProfile] = useState({
+    name: '',
+    jobTitle: '',
+    bio: ''
+  });
 
-// ProductCard child component
-const ProductCard = ({ product, onAddToCart }) => {
-  const [addedFeedback, setAddedFeedback] = useState(false);
-  
-  const handleAdd = () => {
-    onAddToCart(product.id);
-    setAddedFeedback(true);
-    setTimeout(() => setAddedFeedback(false), 600);
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setProfile(prev => ({ ...prev, [name]: value }));
   };
-  
-  const imageEmoji = product.category === 'electronics' ? '📱' : (product.category === 'clothing' ? '👕' : '📚');
-  
+
+  const previewName = profile.name.trim() || "Anonymous";
+  const previewJob = profile.jobTitle.trim() || "No title specified";
+  const previewBio = profile.bio.trim() || "✨ This user hasn't added a bio yet. Fill the form to see live changes.";
+
   return (
-    <div className="product-card">
-      <div className="product-content">
-        <div className="product-info">
-          <span className="product-emoji">{imageEmoji}</span>
-          <h3 className="product-name">{product.name}</h3>
-          <p className="product-description">{product.description}</p>
+    <div className="profile-container">
+      <div className="profile-card">
+        <div className="profile-grid">
+          {/* Left side: Form */}
+          <div className="profile-form-side">
+            <h2 className="profile-title">✏️ Edit Your Profile</h2>
+            <div className="profile-form-fields">
+              <div className="form-group">
+                <label className="form-label">Full Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={profile.name}
+                  onChange={handleInputChange}
+                  className="form-input"
+                  placeholder="e.g., Taylor Swift"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Job Title</label>
+                <input
+                  type="text"
+                  name="jobTitle"
+                  value={profile.jobTitle}
+                  onChange={handleInputChange}
+                  className="form-input"
+                  placeholder="e.g., Frontend Developer"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Short Bio</label>
+                <textarea
+                  name="bio"
+                  value={profile.bio}
+                  onChange={handleInputChange}
+                  rows="4"
+                  className="form-textarea"
+                  placeholder="Tell something about yourself..."
+                ></textarea>
+                <p className="live-hint">Live preview updates with every keystroke →</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right side: Live Preview Card */}
+          <div className="preview-side">
+            <div className="preview-card-wrapper">
+              <div className="preview-card">
+                <div className="preview-header-bg"></div>
+                <div className="preview-content">
+                  <div className="preview-avatar">
+                    <div className="avatar-inner">
+                      {previewName.charAt(0).toUpperCase() || '?'}
+                    </div>
+                  </div>
+                  <div className="preview-text">
+                    <h3 className="preview-name">{previewName}</h3>
+                    <p className="preview-job">{previewJob}</p>
+                    <div className="preview-bio">
+                      <p>{previewBio}</p>
+                    </div>
+                  </div>
+                  <div className="preview-footer">
+                    <span>⚡ live preview</span>
+                  </div>
+                </div>
+              </div>
+              <p className="preview-note">Updates as you type — no button needed</p>
+            </div>
+          </div>
         </div>
-        <div className="product-price">${product.price}</div>
-      </div>
-      <div className="product-footer">
-        <span className="product-category">{product.category}</span>
-        <button onClick={handleAdd} className={`product-add-btn ${addedFeedback ? 'added' : ''}`}>
-          {addedFeedback ? '✓ Added!' : '🛒 Add to Cart'}
-        </button>
       </div>
     </div>
   );
 };
 
-// CartSummary component
-const CartSummary = ({ totalItems }) => {
-  return (
-    <div className="cart-summary">
-      <div className="cart-header">
-        <span className="cart-icon">🛍️</span>
-        <h2 className="cart-title">Cart Summary</h2>
-      </div>
-      <div className="cart-count">
-        <span className="cart-number">{totalItems}</span>
-        <span className="cart-label">items</span>
-      </div>
-      <p className="cart-message">
-        {totalItems === 0 ? "Your cart is empty. Add some products!" : `You have ${totalItems} item${totalItems !== 1 ? 's' : ''} in your cart.`}
-      </p>
-      <div className="cart-note">✨ Cart state lifted to parent – shared across all product cards</div>
-    </div>
-  );
-};
-
-// ShoppingCart parent component
-const ShoppingCart = () => {
-  const [cartCount, setCartCount] = useState(0);
-  
-  const products = [
-    { id: 1, name: "Wireless Headphones", description: "Noise cancelling, 30h battery", price: 79.99, category: "electronics" },
-    { id: 2, name: "Cotton T-Shirt", description: "Soft, breathable fabric", price: 19.99, category: "clothing" },
-    { id: 3, name: "JavaScript: The Good Parts", description: "Essential JS book", price: 29.99, category: "books" },
-    { id: 4, name: "Smart Watch", description: "Fitness tracker & notifications", price: 199.99, category: "electronics" },
-    { id: 5, name: "Denim Jacket", description: "Classic style, all seasons", price: 59.99, category: "clothing" }
-  ];
-  
-  const addToCartHandler = (productId) => {
-    setCartCount(prevCount => prevCount + 1);
-    console.log(`Product ID ${productId} added to cart. New total: ${cartCount + 1}`);
-  };
-  
-  return (
-    <div className="shopping-cart-container">
-      <div className="products-section">
-        <div className="products-header">
-          <h2 className="products-title">📦 Our Products</h2>
-          <span className="products-count">{products.length} items</span>
-        </div>
-        <div className="products-grid">
-          {products.map(product => (
-            <ProductCard key={product.id} product={product} onAddToCart={addToCartHandler} />
-          ))}
-        </div>
-      </div>
-      <div className="summary-section">
-        <CartSummary totalItems={cartCount} />
-      </div>
-    </div>
-  );
-};
-
-// --------------------------------------------------------------
-// Main App Component
-// --------------------------------------------------------------
+// ----- Main App Component -----
 const App = () => {
   return (
-    <div className="app-container">
+    <div className="app">
       <div className="app-header">
-        <h1 className="app-title">Day 2: Props & State Mastery</h1>
-        <p className="app-subtitle">Interactive Counter · ToggleCard · ColorPicker · Product Listing with Shared Cart</p>
+        <h1 className="app-title">📋 React Forms Workshop</h1>
+        <p className="app-subtitle">Task 1: Registration with Validation • Task 2: Dynamic Live Preview Profile</p>
       </div>
       
-      <section className="task-section">
-        <div className="task-badge task1-badge">Task 1</div>
-        <h2 className="task-title">Interactive Components (useState)</h2>
-        <div className="task1-grid">
-          <Counter />
-          <ToggleCard />
-          <ColorPicker />
-        </div>
-      </section>
-      
-      <div className="divider"></div>
-      
-      <section className="task-section">
-        <div className="task-badge task2-badge">Task 2</div>
-        <h2 className="task-title">Shopping Cart (Lifted State)</h2>
-        <span className="task-subnote">Parent manages cart count → passes handler to children</span>
-        <ShoppingCart />
-      </section>
-      
-      <div className="app-footer">
-        <div className="footer-item">✅ Task 1: Counter never goes below 0; ToggleCard hides/shows content; ColorPicker updates preview background.</div>
-        <div className="footer-item">✅ Task 2: ShoppingCart parent holds cart state, passes addToCart handler. ProductCard child uses it to update parent's count. CartSummary displays total items.</div>
+      <div className="tasks-grid">
+        <RegistrationForm />
+        <ProfileBuilder />
       </div>
+      
+      <footer className="app-footer">
+        ✅ Day 4 Tasks: Controlled forms • Validation • Live sync • Clear success + error messages
+      </footer>
     </div>
   );
 };
